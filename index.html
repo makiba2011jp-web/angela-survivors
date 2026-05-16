@@ -149,38 +149,6 @@
     color: #ffe79b;
     margin-top: 4px;
   }
-
-  /* モバイル縦持ち時の回転案内 */
-  #rotate-hint { display: none; }
-  #rotate-hint .rh-icon {
-    font-size: 84px;
-    animation: rh-rotate 1.8s ease-in-out infinite;
-  }
-  #rotate-hint .rh-text {
-    font-size: 22px;
-    line-height: 1.7;
-    letter-spacing: 0.08em;
-    color: #e0c8ff;
-    text-shadow: 0 0 12px #b178ff;
-  }
-  @keyframes rh-rotate {
-    0%, 35%   { transform: rotate(0deg); }
-    65%, 100% { transform: rotate(90deg); }
-  }
-  @media (orientation: portrait) and (pointer: coarse) {
-    #rotate-hint {
-      display: flex;
-      position: fixed; inset: 0;
-      z-index: 100;
-      background: #0b1410;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 28px;
-    }
-    #game, #minimap, #joystick-zone { visibility: hidden; }
-  }
 </style>
 </head>
 <body>
@@ -193,12 +161,6 @@
   <div id="joystick-base">
     <div id="joystick-knob"></div>
   </div>
-</div>
-
-<!-- モバイル縦持ち時の回転案内 -->
-<div id="rotate-hint">
-  <div class="rh-icon">📱</div>
-  <div class="rh-text">横向きにして<br>プレイしてください</div>
 </div>
 
 <!-- タイトル画面 -->
