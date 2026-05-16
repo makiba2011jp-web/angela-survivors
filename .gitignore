@@ -1,0 +1,17 @@
+# --- Web公開に不要なファイル ---
+.claude/
+バックアップ/
+資料/
+バックアップ.bat
+all_chars_demo.html
+
+# 未使用の旧アセット（公開不要・容量削減）
+idle.png
+effect.png
+daisy_effect0.png
+porinemu_effect0.png
+
+# OS / エディタ
+Thumbs.db
+desktop.ini
+.DS_Store
