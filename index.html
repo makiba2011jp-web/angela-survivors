@@ -283,7 +283,8 @@ const sprites = {
 };
 
 // ---------- 透過処理 ----------
-// 白背景PNGをオフスクリーンcanvasに描画してから白(>240)ピクセルを透明化する
+// 白背景PNGの「縁から連結した白」だけをフラッドフィルで透過する(=背景のみ除去)。
+// キャラ内部の白(輪郭で囲まれた白)は塗りつぶさず残す。
 // CORS制約等で getImageData が失敗した場合は元画像をそのまま返す(背景は残る)
 function processImage(img, name) {
   const c = document.createElement("canvas");
@@ -292,18 +293,38 @@ function processImage(img, name) {
   const cctx = c.getContext("2d");
   cctx.drawImage(img, 0, 0);
   try {
-    const data = cctx.getImageData(0, 0, c.width, c.height);
+    const W = c.width, H = c.height;
+    const data = cctx.getImageData(0, 0, W, H);
     const px = data.data;
-    let cleared = 0;
-    for (let i = 0; i < px.length; i += 4) {
+    // 白(背景)判定: 明るく彩度が低いピクセル
+    const isWhite = (p) => {
+      const i = p * 4;
       const r = px[i], g = px[i + 1], b = px[i + 2];
-      if (r > 220 && g > 220 && b > 220 && Math.max(r, g, b) - Math.min(r, g, b) < 30) {
-        px[i + 3] = 0;
-        cleared++;
-      }
+      return r > 220 && g > 220 && b > 220 && Math.max(r, g, b) - Math.min(r, g, b) < 30;
+    };
+    // 画像の四辺を起点に、連結した白ピクセルだけを透明化(フラッドフィル)
+    // → 背景の白のみ消え、キャラ内部の白は残る
+    const visited = new Uint8Array(W * H);
+    const stack = [];
+    const seed = (x, y) => {
+      if (x < 0 || y < 0 || x >= W || y >= H) return;
+      const p = y * W + x;
+      if (visited[p]) return;
+      visited[p] = 1;
+      if (isWhite(p)) stack.push(p);
+    };
+    for (let x = 0; x < W; x++) { seed(x, 0); seed(x, H - 1); }
+    for (let y = 0; y < H; y++) { seed(0, y); seed(W - 1, y); }
+    let cleared = 0;
+    while (stack.length) {
+      const p = stack.pop();
+      px[p * 4 + 3] = 0;
+      cleared++;
+      const x = p % W, y = (p - x) / W;
+      seed(x + 1, y); seed(x - 1, y); seed(x, y + 1); seed(x, y - 1);
     }
     cctx.putImageData(data, 0, 0);
-    console.log(`[sprite:${name}] 白背景透過: ${cleared}px をクリア`);
+    console.log(`[sprite:${name}] 縁から連結した白背景を透過: ${cleared}px をクリア`);
     return c;
   } catch (e) {
     console.warn(`[sprite:${name}] 透過処理失敗(CORS制約の可能性): ${e.message}`);
