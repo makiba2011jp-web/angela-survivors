@@ -223,22 +223,38 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// ウィンドウにフィット(アスペクト比維持)
+// ゲーム視野(内部解像度)。resize() で画面の向きに応じて更新する
+let VIEW_W = 800;
+let VIEW_H = 600;
+
+// ウィンドウにフィット。縦持ち時は縦長の視野にして画面いっぱいに表示する
 function resize() {
-  const aspect = 800 / 600;
-  let w = window.innerWidth;
-  let h = window.innerHeight;
+  const iw = window.innerWidth;
+  const ih = window.innerHeight;
+  if (ih > iw) {
+    // 縦持ち: 横600固定、縦は画面比に合わせる(900〜1300にクランプ)
+    VIEW_W = 600;
+    VIEW_H = Math.max(900, Math.min(1300, Math.round(600 * ih / iw)));
+  } else {
+    // 横向き / PC: 従来の 800x600
+    VIEW_W = 800;
+    VIEW_H = 600;
+  }
+  canvas.width = VIEW_W;
+  canvas.height = VIEW_H;
+  // CSS表示サイズを画面にフィット(アスペクト比維持)
+  const aspect = VIEW_W / VIEW_H;
+  let w = iw, h = ih;
   if (w / h > aspect) w = h * aspect;
   else h = w / aspect;
   canvas.style.width = w + "px";
   canvas.style.height = h + "px";
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", resize);
 resize();
 
 // ---------- ゲーム定数 ----------
-const VIEW_W = 800;
-const VIEW_H = 600;
 const CLEAR_TIME = 10 * 60;          // (旧) 互換のため残置
 const STAGE_DURATION   = 10 * 60;    // 各ステージ10分
 let currentStage = 1;                // 現在のステージ(1〜3)
