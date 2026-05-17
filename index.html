@@ -388,6 +388,11 @@ const Sound = (() => {
       tone(880, 0.08, "square", 0.16, null, 0);
       tone(1175, 0.12, "square", 0.16, null, 0.07);
     },
+    thunder() {
+      noise(0.16, 0.20, 3500);              // 鋭いクラック
+      noise(0.45, 0.13, 500, 0.02);         // 低い轟き
+      tone(150, 0.22, "sawtooth", 0.10, 60, 0);
+    },
     bossAppear() { tone(110, 0.6, "sawtooth", 0.22, 70); noise(0.6, 0.10, 400); },
     bossDefeat() {
       noise(0.35, 0.22, 900);
@@ -1008,6 +1013,7 @@ const DIRS_8 = [0, 45, 90, 135, 180, 225, 270, 315].map((d) => d * Math.PI / 180
 
 // 武器レベルに応じて雷を配置する
 function spawnLightnings(level) {
+  Sound.thunder();
   const INNER = 100, OUTER = 200;
   const damage = player.bulletDamage * 0.7;
   const isLv5 = (level >= 5);
