@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>エンジェラサバイバーズ</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1410">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="エンジェラ">
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -4245,6 +4252,15 @@ preloadSprites(() => {
   lastTime = performance.now();
   requestAnimationFrame(loop);
 });
+
+// ---------- PWA: Service Worker 登録 ----------
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((e) => {
+      console.warn("ServiceWorker 登録失敗:", e);
+    });
+  });
+}
 </script>
 </body>
 </html>
