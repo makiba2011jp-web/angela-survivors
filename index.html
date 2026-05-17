@@ -605,8 +605,8 @@ const UPGRADES = [
   },
   {
     id: "rate", name: "詠唱加速", icon: "⏱",
-    desc: "攻撃間隔 -0.2秒",
-    apply: (p) => { p.attackInterval = Math.max(0.3, p.attackInterval - 0.2); },
+    desc: "全武器の発動間隔 -12%",
+    apply: (p) => { p.castMult = Math.max(0.45, p.castMult - 0.12); },
   },
   {
     id: "speed", name: "俊足の祝福", icon: "🌬",
@@ -686,6 +686,7 @@ function initGame() {
     // 武器パラメータ
     attackInterval: 1.5,
     attackTimer: 0,
+    castMult: 1,            // 詠唱加速で下がる全武器共通の発動速度倍率
     bulletSpeed: 300,
     bulletDamage: 10,
     // ダークゴスペル(範囲攻撃)
@@ -1032,7 +1033,7 @@ function updateDarkGospel(dt) {
   if (player.darkgospel.level <= 0) return;
   player.darkgospel.timer -= dt;
   if (player.darkgospel.timer <= 0) {
-    player.darkgospel.timer = player.darkgospel.interval;
+    player.darkgospel.timer = player.darkgospel.interval * player.castMult;
     spawnLightnings(player.darkgospel.level);
   }
 }
@@ -1207,7 +1208,7 @@ function updateLovelyNude(dt) {
   if (player.lovelynude.level <= 0) return;
   player.lovelynude.timer -= dt;
   if (player.lovelynude.timer <= 0) {
-    player.lovelynude.timer = player.lovelynude.interval;
+    player.lovelynude.timer = player.lovelynude.interval * player.castMult;
     spawnLovelyNudes(player.lovelynude.level);
   }
 }
@@ -1428,7 +1429,7 @@ function updateMeteor(dt) {
   const lv = player.meteor.level;
   player.meteor.timer -= dt;
   if (player.meteor.timer <= 0) {
-    player.meteor.timer = METEOR_INTERVAL[lv - 1];
+    player.meteor.timer = METEOR_INTERVAL[lv - 1] * player.castMult;
     // 最も敵が密集している方向にメテオを落とす
     const target = nearestTarget();
     if (!target) return;
@@ -3306,7 +3307,7 @@ function updateAttack(dt) {
   if (player.attackTimer > 0) return;
   const target = nearestEnemy();
   if (!target) return;
-  player.attackTimer = player.attackInterval;
+  player.attackTimer = player.attackInterval * player.castMult;
 
   const baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
   // ターゲット方向に体の向きを合わせる
