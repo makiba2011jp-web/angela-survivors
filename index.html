@@ -313,6 +313,7 @@ resize();
 const Sound = (() => {
   let ctx = null, masterGain = null, muted = false;
   let lastXpTime = 0, lastDefeatTime = 0;
+  let bgm = null;   // BGM(HTMLAudioElement)
 
   // 初回のユーザー操作時に呼ぶ(ブラウザの自動再生制限を解除)
   function init() {
@@ -363,7 +364,17 @@ const Sound = (() => {
 
   return {
     init,
-    setMuted(m) { muted = m; },
+    // BGM(violet-rift-charge.mp3)をループ再生
+    startBgm() {
+      if (!bgm) {
+        bgm = new Audio("violet-rift-charge.mp3");
+        bgm.loop = true;
+        bgm.volume = 0.35;
+        bgm.muted = muted;
+      }
+      bgm.play().catch(() => {});
+    },
+    setMuted(m) { muted = m; if (bgm) bgm.muted = m; },
     isMuted() { return muted; },
     shoot()  { tone(720, 0.09, "square", 0.10, 380); },
     hurt()   { tone(180, 0.22, "sawtooth", 0.22, 70); noise(0.12, 0.12, 700); },
@@ -4218,6 +4229,7 @@ preloadSprites(() => {
   initTouchControls();
   document.getElementById("startBtn").addEventListener("click", () => {
     Sound.init();
+    Sound.startBgm();
     initGame();
   });
   // ミュートボタン
