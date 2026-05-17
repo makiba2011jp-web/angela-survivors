@@ -622,11 +622,11 @@ const UPGRADES = [
     id: "spellboost", name: "魔法弾強化", icon: "💥",
     getDesc: (p) => ((p.spellUpCount || 0) % 2 === 0)
       ? "魔法弾を強化 — 今回は 弾数 +1"
-      : "魔法弾を強化 — 今回は ダメージ +8",
+      : "魔法弾を強化 — 今回は ダメージ +10",
     apply: (p) => {
       p.spellUpCount = (p.spellUpCount || 0) + 1;
       if (p.spellUpCount % 2 === 1) p.bulletCount += 1;   // 奇数回: 弾数+1
-      else p.bulletDamageBonus += 8;                       // 偶数回: ダメージ+8
+      else p.bulletDamageBonus += 10;                      // 偶数回: ダメージ+10
     },
   },
   // ダークゴスペル(取得/強化、最大Lv5)
