@@ -619,9 +619,15 @@ const UPGRADES = [
     apply: (p) => { p.maxHp += 20; p.hp = p.maxHp; },
   },
   {
-    id: "bspeed", name: "魔弾加速", icon: "💨",
-    desc: "弾速 +50",
-    apply: (p) => { p.bulletSpeed += 50; },
+    id: "spellboost", name: "魔法弾強化", icon: "💥",
+    getDesc: (p) => ((p.spellUpCount || 0) % 2 === 0)
+      ? "魔法弾を強化 — 今回は 弾数 +1"
+      : "魔法弾を強化 — 今回は ダメージ +8",
+    apply: (p) => {
+      p.spellUpCount = (p.spellUpCount || 0) + 1;
+      if (p.spellUpCount % 2 === 1) p.bulletCount += 1;   // 奇数回: 弾数+1
+      else p.bulletDamageBonus += 8;                       // 偶数回: ダメージ+8
+    },
   },
   // ダークゴスペル(取得/強化、最大Lv5)
   {
@@ -689,6 +695,9 @@ function initGame() {
     castMult: 1,            // 詠唱加速で下がる全武器共通の発動速度倍率
     bulletSpeed: 300,
     bulletDamage: 10,
+    bulletCount: 1,         // 魔法弾の同時発射数(魔法弾強化で増加)
+    bulletDamageBonus: 0,   // 魔法弾のみの追加ダメージ(魔法弾強化で増加)
+    spellUpCount: 0,        // 魔法弾強化の取得回数(奇数=弾数+1, 偶数=ダメージ+8)
     // ダークゴスペル(範囲攻撃)
     darkgospel: {
       level: 0,            // 0=未取得、1〜5
@@ -3305,28 +3314,41 @@ function updatePlayer(dt) {
 function updateAttack(dt) {
   player.attackTimer -= dt;
   if (player.attackTimer > 0) return;
-  const target = nearestEnemy();
-  if (!target) return;
+  if (enemies.length === 0) return;
   player.attackTimer = player.attackInterval * player.castMult;
 
-  const baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
-  // ターゲット方向に体の向きを合わせる
-  player.anim.facingLeft = Math.cos(baseAngle) < 0;
+  // 近い順にソートし、上位 bulletCount 体を狙う
+  const sorted = enemies.slice().sort((a, b) =>
+    dist2(a.x, a.y, player.x, player.y) - dist2(b.x, b.y, player.x, player.y));
+  const count = player.bulletCount;
+  // 体の向きは最も近い敵に合わせる
+  const firstAngle = Math.atan2(sorted[0].y - player.y, sorted[0].x - player.x);
+  player.anim.facingLeft = Math.cos(firstAngle) < 0;
 
   // ATTACKモーションを再生し、4フレーム目で弾を生成する
   startAttackAnimation(() => {
-    projectiles.push({
-      x: player.x, y: player.y,
-      vx: Math.cos(baseAngle) * player.bulletSpeed,
-      vy: Math.sin(baseAngle) * player.bulletSpeed,
-      angle: baseAngle,                 // 描画時の回転角
-      radius: 16,
-      damage: player.bulletDamage,
-      life: 2.0,                        // 寿命(画面外相当の上限時間)
-      spriteFrame: 0,
-      spriteTimer: 0,
-      spriteFrameTime: 0.08,            // 80ms/frame
-    });
+    const dmg = player.bulletDamage + player.bulletDamageBonus;
+    for (let i = 0; i < count; i++) {
+      // 敵数より弾が多い分は最寄りの敵へ扇状にずらして撃つ
+      const tgt = sorted[i] || sorted[sorted.length - 1];
+      let ang = Math.atan2(tgt.y - player.y, tgt.x - player.x);
+      if (i >= sorted.length) {
+        const extra = i - sorted.length + 1;
+        ang += extra * 0.20 * (extra % 2 ? 1 : -1);
+      }
+      projectiles.push({
+        x: player.x, y: player.y,
+        vx: Math.cos(ang) * player.bulletSpeed,
+        vy: Math.sin(ang) * player.bulletSpeed,
+        angle: ang,
+        radius: 16,
+        damage: dmg,
+        life: 2.0,
+        spriteFrame: 0,
+        spriteTimer: 0,
+        spriteFrameTime: 0.08,
+      });
+    }
     Sound.shoot();
   });
 }
