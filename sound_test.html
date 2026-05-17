@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>エンジェラサバイバーズ — 効果音テスト</title>
+<style>
+  body {
+    margin: 0; padding: 20px;
+    background: #0b1410; color: #fff;
+    font-family: "Yu Gothic", "Hiragino Sans", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1 { font-size: 18px; color: #e0c8ff; text-align: center; margin: 4px 0; }
+  p.note { font-size: 13px; color: #aaa; text-align: center; margin: 6px 0 0; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    max-width: 680px;
+    margin: 20px auto;
+  }
+  button.sfx {
+    padding: 18px 10px;
+    font-size: 15px; font-weight: bold;
+    background: linear-gradient(180deg, #3a2868, #1d1640);
+    color: #fff;
+    border: 2px solid #8a7bd6;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button.sfx:active { background: #8a7bd6; }
+  button.sfx .d {
+    display: block;
+    font-size: 11px; color: #bbb; font-weight: normal;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+<h1>🔊 エンジェラサバイバーズ 効果音テスト</h1>
+<p class="note">ボタンを押すと、ゲームで使われている効果音が鳴ります</p>
+<div class="grid" id="grid"></div>
+<script>
+"use strict";
+// ===== ゲーム本体(index.html)と同じ合成コード =====
+let ctx = null, masterGain = null;
+function init() {
+  if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  ctx = new AC();
+  masterGain = ctx.createGain();
+  masterGain.gain.value = 0.5;
+  masterGain.connect(ctx.destination);
+}
+function tone(freq, dur, type, vol, freqEnd, delay) {
+  if (!ctx) return;
+  const t0 = ctx.currentTime + (delay || 0);
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = type || "square";
+  osc.frequency.setValueAtTime(freq, t0);
+  if (freqEnd) osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(g); g.connect(masterGain);
+  osc.start(t0); osc.stop(t0 + dur + 0.02);
+}
+function noise(dur, vol, cutoff, delay) {
+  if (!ctx) return;
+  const t0 = ctx.currentTime + (delay || 0);
+  const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = cutoff || 1200;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(lp); lp.connect(g); g.connect(masterGain);
+  src.start(t0); src.stop(t0 + dur + 0.02);
+}
+// ===== 効果音定義(ゲームと同一) =====
+const SOUNDS = [
+  { name: "攻撃(魔法弾)",    desc: "shoot",      fn: () => { tone(720, 0.09, "square", 0.10, 380); } },
+  { name: "被弾",            desc: "hurt",       fn: () => { tone(180, 0.22, "sawtooth", 0.22, 70); noise(0.12, 0.12, 700); } },
+  { name: "敵撃破",          desc: "defeat",     fn: () => { tone(300, 0.10, "square", 0.12, 140); noise(0.08, 0.08, 1500); } },
+  { name: "経験値取得",      desc: "xp",         fn: () => { tone(900, 0.06, "sine", 0.07, 1300); } },
+  { name: "レベルアップ",    desc: "levelUp",    fn: () => { tone(523, 0.12, "square", 0.16, null, 0); tone(659, 0.12, "square", 0.16, null, 0.10); tone(784, 0.20, "square", 0.18, null, 0.20); } },
+  { name: "カード選択",      desc: "cardSelect", fn: () => { tone(880, 0.08, "square", 0.16, null, 0); tone(1175, 0.12, "square", 0.16, null, 0.07); } },
+  { name: "雷鳴(ゴスペル)",  desc: "thunder",    fn: () => { noise(0.16, 0.20, 3500); noise(0.45, 0.13, 500, 0.02); tone(150, 0.22, "sawtooth", 0.10, 60, 0); } },
+  { name: "ボス出現",        desc: "bossAppear", fn: () => { tone(110, 0.6, "sawtooth", 0.22, 70); noise(0.6, 0.10, 400); } },
+  { name: "ボス撃破",        desc: "bossDefeat", fn: () => { noise(0.35, 0.22, 900); tone(392, 0.15, "square", 0.18, null, 0.10); tone(523, 0.15, "square", 0.18, null, 0.22); tone(784, 0.30, "square", 0.20, null, 0.34); } },
+  { name: "ステージクリア",  desc: "stageClear", fn: () => { tone(523, 0.14, "square", 0.18, null, 0); tone(659, 0.14, "square", 0.18, null, 0.14); tone(784, 0.14, "square", 0.18, null, 0.28); tone(1047, 0.32, "square", 0.20, null, 0.42); } },
+  { name: "ゲームオーバー",  desc: "gameOver",   fn: () => { tone(330, 0.30, "sawtooth", 0.20, 220, 0); tone(247, 0.30, "sawtooth", 0.20, 160, 0.28); tone(165, 0.60, "sawtooth", 0.22, 90, 0.56); } },
+];
+const grid = document.getElementById("grid");
+for (const s of SOUNDS) {
+  const b = document.createElement("button");
+  b.className = "sfx";
+  b.innerHTML = s.name + '<span class="d">' + s.desc + '</span>';
+  b.addEventListener("click", () => { init(); s.fn(); });
+  grid.appendChild(b);
+}
+</script>
+</body>
+</html>
