@@ -593,15 +593,17 @@ function getSpawnInterval() {
     // ステージ1: 初期2.0秒、10分で0.6秒
     base = Math.max(0.6, 2.0 - elapsed * 0.0023);
   } else if (currentStage === 2) {
-    // ステージ2: 初期1.2秒、10分で0.3秒
-    base = Math.max(0.3, 1.2 - elapsed * 0.0015);
+    // ステージ2: 初期1.2秒、10分で0.6秒
+    base = Math.max(0.6, 1.2 - elapsed * 0.001);
   } else {
     // ステージ3: 初期0.8秒、10分で0.2秒
     base = Math.max(0.2, 0.8 - elapsed * 0.001);
   }
-  // 序盤倍率。ステージ1は専用調整(0〜30秒:約5.0秒 / 30〜60秒:約3秒)
-  let mul = earlySpawnMul();
+  // 序盤倍率。ステージ1だけ専用抑制、ステージ2・3は基本カーブのみ(時間帯分けなし)
+  let mul = 1;
   if (currentStage === 1) {
+    // ステージ1: 0〜30秒 約5.0秒 / 30〜60秒 約3秒 / 60秒〜は earlySpawnMul に従う(=×1)
+    mul = earlySpawnMul();
     if (elapsed < 30) mul = 2.5;
     else if (elapsed < 60) mul = 1.55;
   }
@@ -1430,7 +1432,9 @@ function spawnPotty() {
 }
 
 function pottySpawnLoop(dt) {
-  if (elapsed < POTTY_SPAWN_START) return;
+  // ステージ2・3は2分から、ステージ1は POTTY_SPAWN_START(150秒)
+  const start = currentStage === 1 ? POTTY_SPAWN_START : 120;
+  if (elapsed < start) return;
   // ステージ1はゆっくり出現
   const interval = currentStage === 1 ? POTTY_SPAWN_INTERVAL * 1.5 : POTTY_SPAWN_INTERVAL;
   pottySpawnTimer += dt;
@@ -1469,9 +1473,13 @@ function spawnDaisy() {
 }
 
 function daisySpawnLoop(dt) {
-  if (elapsed < DAISY_SPAWN_START) return;
-  // ★序盤抑制: 〜60秒は×8、〜120秒は×4、それ以降は等倍
-  const mul = elapsed < 60 ? 8 : (elapsed < 120 ? 4 : 1);
+  // ステージ2・3は最初から、ステージ1は DAISY_SPAWN_START(15秒)
+  const start = currentStage === 1 ? DAISY_SPAWN_START : 0;
+  if (elapsed < start) return;
+  // ★序盤抑制: ステージ1のみ(〜60秒×8、〜120秒×4、以降×1)。ステージ2・3は等倍
+  const mul = currentStage === 1
+    ? (elapsed < 60 ? 8 : (elapsed < 120 ? 4 : 1))
+    : 1;
   const interval = DAISY_SPAWN_INTERVAL * mul;
   daisySpawnTimer += dt;
   if (daisySpawnTimer >= interval) {
@@ -1511,7 +1519,9 @@ function spawnKonbu() {
 }
 
 function konbuSpawnLoop(dt) {
-  if (elapsed < KONBU_SPAWN_START) return;
+  // ステージ2・3は2分から、ステージ1は KONBU_SPAWN_START(120秒)
+  const start = currentStage === 1 ? KONBU_SPAWN_START : 120;
+  if (elapsed < start) return;
   konbuSpawnTimer += dt;
   if (konbuSpawnTimer >= KONBU_SPAWN_INTERVAL) {
     konbuSpawnTimer -= KONBU_SPAWN_INTERVAL;
@@ -1774,9 +1784,13 @@ function spawnPorinemu() {
 }
 
 function porinemuSpawnLoop(dt) {
-  if (elapsed < PORINEMU_SPAWN_START) return;
-  // ★序盤抑制: 〜120秒は×1(初出現約92秒)、〜240秒は×2、それ以降は等倍
-  const mul = elapsed < 120 ? 1 : (elapsed < 240 ? 2 : 1);
+  // ステージ2・3は最初から、ステージ1は PORINEMU_SPAWN_START(50秒)
+  const start = currentStage === 1 ? PORINEMU_SPAWN_START : 0;
+  if (elapsed < start) return;
+  // ★序盤抑制: ステージ1のみ(〜120秒×1、〜240秒×2、以降×1)。ステージ2・3は等倍
+  const mul = currentStage === 1
+    ? (elapsed < 120 ? 1 : (elapsed < 240 ? 2 : 1))
+    : 1;
   const interval = PORINEMU_SPAWN_INTERVAL * mul;
   porinemuSpawnTimer += dt;
   if (porinemuSpawnTimer >= interval) {
@@ -2233,9 +2247,13 @@ function drawDaisyEnemies() {
 }
 
 function eliteSpawnLoop(dt) {
-  if (elapsed < ELITE_SPAWN_START) return;
-  // ステージ1はゆっくり出現
-  const interval = (currentStage === 1 ? ELITE_SPAWN_INTERVAL * 1.5 : ELITE_SPAWN_INTERVAL) * earlySpawnMul();
+  // ステージ2・3は最初から、ステージ1は ELITE_SPAWN_START(30秒)
+  const start = currentStage === 1 ? ELITE_SPAWN_START : 0;
+  if (elapsed < start) return;
+  // ステージ1はゆっくり出現+早期抑制。ステージ2・3は等倍
+  const interval = currentStage === 1
+    ? ELITE_SPAWN_INTERVAL * 1.5 * earlySpawnMul()
+    : ELITE_SPAWN_INTERVAL;
   eliteSpawnTimer += dt;
   if (eliteSpawnTimer >= interval) {
     eliteSpawnTimer -= interval;
@@ -3717,8 +3735,8 @@ function showGameOver() {
 function nextStage() {
   currentStage++;
   elapsed = 0;
-  // 経験値オーブはステージクリア後も残す
-  resetStageCombatState({ preserveXpOrbs: true });
+  // 経験値オーブはステージクリア後も残す。一度倒したまきばは再出現しない
+  resetStageCombatState({ preserveXpOrbs: true, resetBossDefeated: false });
   hideOverlay("stage-clear");
   gameState = STATE_PLAYING;
   // プレイヤーHP全回復
