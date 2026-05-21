@@ -326,7 +326,7 @@ let elapsed, killCount, gameState, spawnTimer;
 let lastTime = 0;
 
 // ボス(まきば)関連
-const BOSS_SPAWN_TIME = 300;        // ★5分経過後に出現
+const BOSS_SPAWN_TIME = 480;        // ★8分経過後に出現
 let boss = null;                    // 1体のみ。撃破後 null のまま
 let bossDefeated = false;           // 再出現なし
 let bossWaves = [];                 // ボスの波動エフェクト(プレイヤーへ飛翔)
@@ -335,11 +335,11 @@ let bossNotificationTimer = 0;      // 「BOSS出現!」テキスト表示残り
 // ステージ内で発生する敵・弾・エフェクトをまとめて初期化する。
 // 新しい敵や攻撃を追加した時は、ここに足すとステージ遷移時の掃除漏れを防げる。
 function resetStageCombatState(options = {}) {
-  const { resetBossDefeated = true } = options;
+  const { resetBossDefeated = true, preserveXpOrbs = false } = options;
 
   enemies = [];
   projectiles = [];
-  xpOrbs = [];
+  if (!preserveXpOrbs) xpOrbs = [];
   lightnings = [];
   lovenudes = [];
   shadowOrbs = [];
@@ -3717,7 +3717,8 @@ function showGameOver() {
 function nextStage() {
   currentStage++;
   elapsed = 0;
-  resetStageCombatState();
+  // 経験値オーブはステージクリア後も残す
+  resetStageCombatState({ preserveXpOrbs: true });
   hideOverlay("stage-clear");
   gameState = STATE_PLAYING;
   // プレイヤーHP全回復
