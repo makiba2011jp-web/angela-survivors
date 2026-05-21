@@ -29,10 +29,13 @@
 <!-- タイトル画面 -->
 <div id="title" class="overlay active">
   <h1>エンジェラサバイバーズ</h1>
-  <p>魔女エンジェラの 10分間生存サバイバル</p>
+  <p>魔女エンジェラの生存サバイバル</p>
   <p>WASD / 矢印キー で移動 ・ 攻撃は自動</p>
   <div id="highscore-display"></div>
-  <button id="startBtn">START</button>
+  <div id="mode-select">
+    <button id="startBtnEasy" class="mode-btn mode-easy">イージー (10分)</button>
+    <button id="startBtn" class="mode-btn mode-normal">ノーマル (30分)</button>
+  </div>
 </div>
 
 <!-- ゲームオーバー画面 -->

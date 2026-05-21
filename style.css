@@ -57,6 +57,29 @@ html, body {
     transform: translateY(-2px);
   }
 
+  /* モード選択(タイトル画面) */
+  #mode-select {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+    align-items: center;
+  }
+  .mode-btn {
+    margin-top: 0 !important;
+    min-width: 280px;
+    padding: 12px 32px !important;
+    font-size: 20px !important;
+  }
+  .mode-easy {
+    background: linear-gradient(180deg, #6dd1a0, #2f8b6b) !important;
+    border-color: #c0f0d8 !important;
+    box-shadow: 0 0 16px rgba(109, 209, 160, 0.6) !important;
+  }
+  .mode-easy:hover {
+    background: linear-gradient(180deg, #8de4b8, #46a484) !important;
+  }
+
   /* レベルアップカード */
   #levelup .cards {
     display: flex;

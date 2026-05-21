@@ -150,6 +150,24 @@ const Sound = (() => {
 const CLEAR_TIME = 10 * 60;          // (旧) 互換のため残置
 const STAGE_DURATION   = 10 * 60;    // 各ステージ10分
 let currentStage = 1;                // 現在のステージ(1〜3)
+let gameMode = "normal";             // "normal"(3ステージ30分) / "easy"(単独10分・敵弱体)
+let easyIntroEvents = null;          // イージーモード序盤の固定スポーンスクリプト
+const EASY_INTRO_END = 30;           // この秒数までは通常スポーンを抑制
+
+// イージーモードの倍率(敵パラメータをこの値で補正する)
+const EASY_MODS = {
+  spawnInterval:   1.5,  // 通常敵の出現間隔(長くする=湧きが減る)
+  enemyHp:         0.6,  // 通常敵HP
+  enemyContact:    0.7,  // 通常敵の接触ダメージ
+  enemyCap:        0.7,  // 同時存在数上限
+  specialHp:       0.7,  // 特殊敵(デイジー・ポリネム・ヨンヨン・コンブ・ポッティ)のHP
+  specialInterval: 1.5,  // 特殊敵の出現間隔
+  bossHp:          0.7,  // ボス(まきば)HP
+};
+function easyMul(key) {
+  return gameMode === "easy" ? EASY_MODS[key] : 1;
+}
+function isEasyMode() { return gameMode === "easy"; }
 const XP_PICKUP_RANGE = 80;          // 経験値オーブの吸引距離
 const TILE_SIZE = 40;                // 背景タイルのサイズ
 
@@ -326,7 +344,7 @@ let elapsed, killCount, gameState, spawnTimer;
 let lastTime = 0;
 
 // ボス(まきば)関連
-const BOSS_SPAWN_TIME = 480;        // ★8分経過後に出現
+const BOSS_SPAWN_TIME = 420;        // ★7分経過後に出現
 let boss = null;                    // 1体のみ。撃破後 null のまま
 let bossDefeated = false;           // 再出現なし
 let bossWaves = [];                 // ボスの波動エフェクト(プレイヤーへ飛翔)
@@ -451,7 +469,8 @@ const UPGRADES = [
 ];
 
 // ---------- 初期化 ----------
-function initGame() {
+function initGame(mode) {
+  if (mode === "easy" || mode === "normal") gameMode = mode;
   player = {
     x: 0, y: 0,
     radius: 18,
@@ -510,7 +529,28 @@ function initGame() {
   gameState = STATE_PLAYING;
 
   // 開始直後から敵を出す
-  for (let i = 0; i < 5; i++) spawnEnemy();
+  if (gameMode === "easy") {
+    // イージーモードの序盤スクリプト:
+    //   0秒: ドエル3匹
+    //   10秒: デイジー1匹
+    //   20秒: ドエル3匹 + デイジー1匹
+    //   30秒: デイジー1匹 + ポリネム1匹(以降は通常スポーンに引き継ぎ)
+    for (let i = 0; i < 3; i++) spawnEnemy();
+    easyIntroEvents = [
+      { t: 10, fired: false, fn: () => spawnDaisy() },
+      { t: 20, fired: false, fn: () => {
+        for (let i = 0; i < 3; i++) spawnEnemy();
+        spawnDaisy();
+      }},
+      { t: 30, fired: false, fn: () => {
+        spawnDaisy();
+        spawnPorinemu();
+      }},
+    ];
+  } else {
+    for (let i = 0; i < 5; i++) spawnEnemy();
+    easyIntroEvents = null;
+  }
 
   hideOverlay("title");
   hideOverlay("gameover");
@@ -602,17 +642,25 @@ function getSpawnInterval() {
   // 序盤倍率。ステージ1だけ専用抑制、ステージ2・3は基本カーブのみ(時間帯分けなし)
   let mul = 1;
   if (currentStage === 1) {
-    // ステージ1: 0〜30秒 約5.0秒 / 30〜60秒 約3秒 / 60秒〜は earlySpawnMul に従う(=×1)
     mul = earlySpawnMul();
-    if (elapsed < 30) mul = 2.5;
-    else if (elapsed < 60) mul = 1.55;
+    if (gameMode === "easy") {
+      // イージー: 0〜30秒 ×1.5 / 30〜60秒 ×1.2(ノーマルより序盤の湧きを多め)
+      if (elapsed < 30) mul = 1.5;
+      else if (elapsed < 60) mul = 1.2;
+    } else {
+      // ノーマル: 0〜30秒 ×2.5(約5.0秒) / 30〜60秒 ×1.55(約3秒)
+      if (elapsed < 30) mul = 2.5;
+      else if (elapsed < 60) mul = 1.55;
+    }
   }
-  return base * mul;
+  return base * mul * easyMul("spawnInterval");
 }
 function getEnemyCap() {
-  if (currentStage === 1) return Math.min(100, 20 + Math.floor(elapsed * 0.22));
-  if (currentStage === 2) return Math.min(180, 30 + Math.floor(elapsed * 0.33));
-  return Math.min(250, 40 + Math.floor(elapsed * 0.45));
+  let cap;
+  if (currentStage === 1) cap = Math.min(100, 20 + Math.floor(elapsed * 0.22));
+  else if (currentStage === 2) cap = Math.min(180, 30 + Math.floor(elapsed * 0.33));
+  else cap = Math.min(250, 40 + Math.floor(elapsed * 0.45));
+  return Math.floor(cap * easyMul("enemyCap"));
 }
 function getEnemySpeedScale() {
   if (currentStage === 1) return 1.0 + elapsed * 0.001;
@@ -622,9 +670,11 @@ function getEnemySpeedScale() {
 
 // 時間経過で敵の基礎HPも増加(ステージ別)
 function getEnemyHp() {
-  if (currentStage === 1) return Math.floor(25 + elapsed * 0.08);
-  if (currentStage === 2) return Math.floor(35 + elapsed * 0.15);
-  return Math.floor(55 + elapsed * 0.22);
+  let hp;
+  if (currentStage === 1) hp = 25 + elapsed * 0.08;
+  else if (currentStage === 2) hp = 35 + elapsed * 0.15;
+  else hp = 55 + elapsed * 0.22;
+  return Math.floor(hp * easyMul("enemyHp"));
 }
 
 function spawnEnemy() {
@@ -640,8 +690,8 @@ function spawnEnemy() {
     hp, maxHp: hp,
     // ★速度強化: 基礎75(旧60)、ランダム幅も拡大
     speed: 75 * getEnemySpeedScale() * (0.8 + Math.random() * 0.4),
-    // ★接触ダメージ強化: 15(旧10)
-    contactDamage: 15,
+    // ★接触ダメージ強化: 15(旧10)。イージーモードは ×0.7
+    contactDamage: Math.floor(15 * easyMul("enemyContact")),
     contactCD: 0,
     hitFlash: 0,
     facingLeft: true,
@@ -651,6 +701,8 @@ function spawnEnemy() {
 }
 
 function spawnLoop(dt) {
+  // イージーモードの序盤(〜30秒)は固定スクリプトのみ、通常スポーンは抑制
+  if (gameMode === "easy" && elapsed < EASY_INTRO_END) return;
   // タブ切り替え等で dt が大きくなっても上限を設ける
   const safeDt = Math.min(dt, 0.1);
   spawnTimer += safeDt;
@@ -1348,7 +1400,7 @@ const YONYON_EFFECT_TIMES = [0.13, 0.13, 0.13, 0.13];
 
 function spawnYonYon() {
   const angle = Math.random() * Math.PI * 2;
-  const hp = 600 + Math.floor(elapsed * 0.5);
+  const hp = Math.floor((600 + elapsed * 0.5) * easyMul("specialHp"));
   yonyonElites.push({
     x: player.x + Math.cos(angle) * 540,
     y: player.y + Math.sin(angle) * 540,
@@ -1407,7 +1459,7 @@ const POTTY_METEOR_DAMAGE = 30;   // メテオダメージ
 
 function spawnPotty() {
   const angle = Math.random() * Math.PI * 2;
-  const hp = 800 + Math.floor(elapsed * 0.6);
+  const hp = Math.floor((800 + elapsed * 0.6) * easyMul("specialHp"));
   pottyElites.push({
     x: player.x + Math.cos(angle) * 540,
     y: player.y + Math.sin(angle) * 540,
@@ -1432,11 +1484,18 @@ function spawnPotty() {
 }
 
 function pottySpawnLoop(dt) {
-  // ステージ2・3は2分から、ステージ1は POTTY_SPAWN_START(150秒)
-  const start = currentStage === 1 ? POTTY_SPAWN_START : 120;
+  // ステージ2・3は2分から、ステージ1は POTTY_SPAWN_START(150秒)。イージーは2分から
+  const start = gameMode === "easy" ? 120 : (currentStage === 1 ? POTTY_SPAWN_START : 120);
   if (elapsed < start) return;
-  // ステージ1はゆっくり出現
-  const interval = currentStage === 1 ? POTTY_SPAWN_INTERVAL * 1.5 : POTTY_SPAWN_INTERVAL;
+  // ステージ1はゆっくり出現。イージーモードは約120秒間隔で出現(easyMul はかけない)
+  let interval;
+  if (gameMode === "easy") {
+    interval = 120;
+  } else if (currentStage === 1) {
+    interval = POTTY_SPAWN_INTERVAL * 1.5;
+  } else {
+    interval = POTTY_SPAWN_INTERVAL;
+  }
   pottySpawnTimer += dt;
   if (pottySpawnTimer >= interval) {
     pottySpawnTimer -= interval;
@@ -1449,7 +1508,7 @@ function pottySpawnLoop(dt) {
 function spawnDaisy() {
   const angle = Math.random() * Math.PI * 2;
   const dist  = 420 + Math.random() * 80;
-  const hp    = 150;
+  const hp    = Math.floor(150 * easyMul("specialHp"));
   daisyEnemies.push({
     x: player.x + Math.cos(angle) * dist,
     y: player.y + Math.sin(angle) * dist,
@@ -1473,14 +1532,22 @@ function spawnDaisy() {
 }
 
 function daisySpawnLoop(dt) {
-  // ステージ2・3は最初から、ステージ1は DAISY_SPAWN_START(15秒)
-  const start = currentStage === 1 ? DAISY_SPAWN_START : 0;
+  // イージーモードの序盤(〜30秒)は固定スクリプトのみ、通常スポーンは抑制
+  if (gameMode === "easy" && elapsed < EASY_INTRO_END) return;
+  // ステージ2・3は最初から、ステージ1は DAISY_SPAWN_START(15秒)。イージーは最初から
+  const start = gameMode === "easy" ? 0 : (currentStage === 1 ? DAISY_SPAWN_START : 0);
   if (elapsed < start) return;
   // ★序盤抑制: ステージ1のみ(〜60秒×8、〜120秒×4、以降×1)。ステージ2・3は等倍
-  const mul = currentStage === 1
-    ? (elapsed < 60 ? 8 : (elapsed < 120 ? 4 : 1))
-    : 1;
-  const interval = DAISY_SPAWN_INTERVAL * mul;
+  // イージーモードは抑制なしで終始 ×0.75(他特殊敵より少し多め)
+  let mul;
+  if (gameMode === "easy") {
+    mul = 0.75;
+  } else if (currentStage === 1) {
+    mul = elapsed < 60 ? 8 : (elapsed < 120 ? 4 : 1);
+  } else {
+    mul = 1;
+  }
+  const interval = DAISY_SPAWN_INTERVAL * mul * easyMul("specialInterval");
   daisySpawnTimer += dt;
   if (daisySpawnTimer >= interval) {
     daisySpawnTimer -= interval;
@@ -1493,7 +1560,8 @@ function daisySpawnLoop(dt) {
 function spawnKonbu() {
   const angle = Math.random() * Math.PI * 2;
   const dist  = 480 + Math.random() * 80;
-  const hp    = 3000;
+  // イージーモードでは特にコンブが固すぎるためHPをさらに半分に
+  const hp    = Math.floor(3000 * easyMul("specialHp") * (isEasyMode() ? 0.5 : 1));
   konbuElites.push({
     x: player.x + Math.cos(angle) * dist,
     y: player.y + Math.sin(angle) * dist,
@@ -1522,9 +1590,11 @@ function konbuSpawnLoop(dt) {
   // ステージ2・3は2分から、ステージ1は KONBU_SPAWN_START(120秒)
   const start = currentStage === 1 ? KONBU_SPAWN_START : 120;
   if (elapsed < start) return;
+  // イージーモードは出現間隔を延長
+  const konbuInterval = KONBU_SPAWN_INTERVAL * easyMul("specialInterval");
   konbuSpawnTimer += dt;
-  if (konbuSpawnTimer >= KONBU_SPAWN_INTERVAL) {
-    konbuSpawnTimer -= KONBU_SPAWN_INTERVAL;
+  if (konbuSpawnTimer >= konbuInterval) {
+    konbuSpawnTimer -= konbuInterval;
     spawnKonbu();
   }
 }
@@ -1759,7 +1829,7 @@ function drawKonbuWaves() {
 function spawnPorinemu() {
   const angle = Math.random() * Math.PI * 2;
   const dist  = 440 + Math.random() * 80;
-  const hp    = 200;
+  const hp    = Math.floor(200 * easyMul("specialHp"));
   porinemuEnemies.push({
     x: player.x + Math.cos(angle) * dist,
     y: player.y + Math.sin(angle) * dist,
@@ -1784,14 +1854,20 @@ function spawnPorinemu() {
 }
 
 function porinemuSpawnLoop(dt) {
-  // ステージ2・3は最初から、ステージ1は PORINEMU_SPAWN_START(50秒)
-  const start = currentStage === 1 ? PORINEMU_SPAWN_START : 0;
+  // ステージ2・3は最初から、ステージ1は PORINEMU_SPAWN_START(50秒)。イージーは30秒
+  const start = gameMode === "easy" ? 30 : (currentStage === 1 ? PORINEMU_SPAWN_START : 0);
   if (elapsed < start) return;
   // ★序盤抑制: ステージ1のみ(〜120秒×1、〜240秒×2、以降×1)。ステージ2・3は等倍
-  const mul = currentStage === 1
-    ? (elapsed < 120 ? 1 : (elapsed < 240 ? 2 : 1))
-    : 1;
-  const interval = PORINEMU_SPAWN_INTERVAL * mul;
+  // イージーモードは抑制なしで終始 ×1
+  let mul;
+  if (gameMode === "easy") {
+    mul = 1;
+  } else if (currentStage === 1) {
+    mul = elapsed < 120 ? 1 : (elapsed < 240 ? 2 : 1);
+  } else {
+    mul = 1;
+  }
+  const interval = PORINEMU_SPAWN_INTERVAL * mul * easyMul("specialInterval");
   porinemuSpawnTimer += dt;
   if (porinemuSpawnTimer >= interval) {
     porinemuSpawnTimer -= interval;
@@ -2250,10 +2326,10 @@ function eliteSpawnLoop(dt) {
   // ステージ2・3は最初から、ステージ1は ELITE_SPAWN_START(30秒)
   const start = currentStage === 1 ? ELITE_SPAWN_START : 0;
   if (elapsed < start) return;
-  // ステージ1はゆっくり出現+早期抑制。ステージ2・3は等倍
-  const interval = currentStage === 1
+  // ステージ1はゆっくり出現+早期抑制。ステージ2・3は等倍。イージーモードはさらに延長
+  const interval = (currentStage === 1
     ? ELITE_SPAWN_INTERVAL * 1.5 * earlySpawnMul()
-    : ELITE_SPAWN_INTERVAL;
+    : ELITE_SPAWN_INTERVAL) * easyMul("specialInterval");
   eliteSpawnTimer += dt;
   if (eliteSpawnTimer >= interval) {
     eliteSpawnTimer -= interval;
@@ -2826,8 +2902,8 @@ function spawnBoss() {
     x: player.x + Math.cos(angle) * dist,
     y: player.y + Math.sin(angle) * dist,
     radius: 38,
-    // ★HP増加: 8000(旧5000)
-    hp: 8000, maxHp: 8000,
+    // ★HP: 5334(8000の2/3)。イージーモードはさらに ×0.7
+    hp: Math.floor(5334 * easyMul("bossHp")), maxHp: Math.floor(5334 * easyMul("bossHp")),
     // ★移動速度増加: 130(旧90)
     speed: 130,
     // ★接触ダメージ強化: 25(旧15)、CD短縮: 0.7秒
@@ -2862,8 +2938,8 @@ function updateBoss(dt) {
   if (boss.hitFlash > 0)  boss.hitFlash  -= dt;
   if (boss.contactCD > 0) boss.contactCD -= dt;
 
-  // ★フェーズ2移行(HP50%以下)
-  if (!boss.phase2 && boss.hp <= boss.maxHp * 0.5) {
+  // ★フェーズ2移行(HP50%以下)。イージーモードでは激怒なし
+  if (!boss.phase2 && gameMode !== "easy" && boss.hp <= boss.maxHp * 0.5) {
     boss.phase2 = true;
     boss.speed       = 170;
     boss.waveInterval = 1.0;
@@ -3026,7 +3102,7 @@ function update(dt) {
   const stageClearTime = (typeof STAGE_DURATION !== "undefined") ? STAGE_DURATION : CLEAR_TIME;
   if (elapsed >= stageClearTime) {
     Sound.stageClear();
-    if (typeof currentStage !== "undefined" && currentStage < 3) {
+    if (gameMode !== "easy" && typeof currentStage !== "undefined" && currentStage < 3) {
       // ステージ1〜2クリア(フリーズ防止のため必ず gameState を変える)
       gameState = STATE_CLEAR;
       document.getElementById("stage-clear-title").textContent =
@@ -3056,6 +3132,16 @@ function update(dt) {
   updateDaisyEnemies(dt);
   updateKonbuElites(dt);
   updateKonbuWaves(dt);
+  // イージーモード序盤のスクリプトイベント処理
+  if (easyIntroEvents) {
+    for (const ev of easyIntroEvents) {
+      if (!ev.fired && elapsed >= ev.t) {
+        ev.fired = true;
+        ev.fn();
+      }
+    }
+  }
+
   konbuSpawnLoop(dt);
   updatePorinemuEnemies(dt);
   updatePorinemuWaves(dt);
@@ -4023,8 +4109,15 @@ preloadSprites(() => {
   initTouchControls();
   document.getElementById("startBtn").addEventListener("click", () => {
     Sound.init();
-    initGame();
+    initGame("normal");
   });
+  const easyBtn = document.getElementById("startBtnEasy");
+  if (easyBtn) {
+    easyBtn.addEventListener("click", () => {
+      Sound.init();
+      initGame("easy");
+    });
+  }
   // ミュートボタン
   const muteBtn = document.getElementById("mute-btn");
   if (muteBtn) {
