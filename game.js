@@ -3790,6 +3790,17 @@ function drawMinimap() {
     y: MM_H / 2 + (wy - player.y) / MM_RANGE * MM_H / 2,
   });
 
+  // 経験値オーブ(シアンの小さな点・敵の下に描画)
+  mmCtx.fillStyle = "rgba(125, 240, 255, 0.75)";
+  for (const o of xpOrbs) {
+    if (o.dead) continue;
+    const p = toMM(o.x, o.y);
+    if (p.x < 0 || p.x > MM_W || p.y < 0 || p.y > MM_H) continue;
+    mmCtx.beginPath();
+    mmCtx.arc(p.x, p.y, 1.0, 0, Math.PI * 2);
+    mmCtx.fill();
+  }
+
   // 敵(赤い点)
   mmCtx.fillStyle = "rgba(255, 80, 80, 0.85)";
   for (const e of enemies) {
@@ -3797,6 +3808,42 @@ function drawMinimap() {
     if (p.x < 0 || p.x > MM_W || p.y < 0 || p.y > MM_H) continue;
     mmCtx.beginPath();
     mmCtx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+    mmCtx.fill();
+  }
+
+  // デイジー(薄紫の小さめ点)
+  mmCtx.fillStyle = "rgba(230, 179, 255, 0.9)";
+  for (const el of daisyEnemies) {
+    if (el.dead) continue;
+    const p = toMM(el.x, el.y);
+    if (p.x < 0 || p.x > MM_W || p.y < 0 || p.y > MM_H) continue;
+    mmCtx.beginPath();
+    mmCtx.arc(p.x, p.y, 2.0, 0, Math.PI * 2);
+    mmCtx.fill();
+  }
+
+  // ポリネム(薄緑の小さめ点)
+  mmCtx.fillStyle = "rgba(170, 221, 170, 0.9)";
+  for (const el of porinemuEnemies) {
+    if (el.dead) continue;
+    const p = toMM(el.x, el.y);
+    if (p.x < 0 || p.x > MM_W || p.y < 0 || p.y > MM_H) continue;
+    mmCtx.beginPath();
+    mmCtx.arc(p.x, p.y, 2.0, 0, Math.PI * 2);
+    mmCtx.fill();
+  }
+
+  // コンブ(薄水色の大きめ点・中ボス級)
+  for (const el of konbuElites) {
+    if (el.dead) continue;
+    const p = toMM(el.x, el.y);
+    mmCtx.fillStyle = "rgba(170, 221, 255, 1)";
+    mmCtx.beginPath();
+    mmCtx.arc(
+      Math.max(3, Math.min(MM_W-3, p.x)),
+      Math.max(3, Math.min(MM_H-3, p.y)),
+      3.5, 0, Math.PI * 2
+    );
     mmCtx.fill();
   }
 
