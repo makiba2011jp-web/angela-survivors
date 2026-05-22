@@ -57,28 +57,64 @@ html, body {
     transform: translateY(-2px);
   }
 
+  /* タイトル画面: 背景アート + 下方を暗くして文字を読みやすく */
+  #title {
+    background:
+      linear-gradient(rgba(11,20,16,0.05), rgba(11,20,16,0.85)),
+      url("title_bg.jpg") center / cover no-repeat,
+      #0b1410;
+    /* 中身を下側に寄せて上部(エンジェラの顔)を見せる */
+    justify-content: flex-end;
+    padding-bottom: 0;
+  }
+  /* タイトルロゴ画像(正方形＋透明余白のため高さ基準で制限) */
+  #title-logo {
+    width: auto;
+    max-width: 86%;
+    max-height: 29vh;
+    margin: 0 0 -28px 0;
+    filter: drop-shadow(0 0 18px rgba(177,120,255,0.55));
+  }
+  /* タイトルの文字を背景上で読みやすく + 行間を詰める + フォント小さめ */
+  #title p { text-shadow: 0 0 6px #000, 0 1px 2px #000; margin: 0; font-size: 13px; }
+  /* 最高記録の改行はモバイルのみ(デスクトップでは消す=1行) */
+  .hs-mobile-break { display: none; }
+  #highscore-display { text-shadow: 0 0 6px #000, 0 1px 2px #000; margin-top: 1px; font-size: 13px; }
+
   /* モード選択(タイトル画面) */
   #mode-select {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-top: 24px;
+    gap: 2px;
+    margin-top: 6px;
     align-items: center;
   }
+  /* 画像ボタン(枠+文字が画像に含まれる。HTML側のテキストは非表示)
+     箱を画像比率(約3.94:1)に合わせて上下の透明余白をなくす */
   .mode-btn {
-    margin-top: 0 !important;
-    min-width: 280px;
-    padding: 12px 32px !important;
-    font-size: 20px !important;
+    width: min(60%, 270px);
+    height: clamp(40px, 15.2vw, 68px);
+    aspect-ratio: 622 / 158;
+    background-color: transparent !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 0 !important;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.1s;
   }
-  .mode-easy {
-    background: linear-gradient(180deg, #6dd1a0, #2f8b6b) !important;
-    border-color: #c0f0d8 !important;
-    box-shadow: 0 0 16px rgba(109, 209, 160, 0.6) !important;
+  .mode-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    filter: drop-shadow(0 0 14px rgba(177,120,255,0.85));
+    background-color: transparent !important;
   }
-  .mode-easy:hover {
-    background: linear-gradient(180deg, #8de4b8, #46a484) !important;
-  }
+  .mode-easy   { background-image: url("btn_easy.png") !important; }
+  .mode-normal { background-image: url("btn_normal.png") !important; }
 
   /* レベルアップカード */
   #levelup .cards {
@@ -165,7 +201,7 @@ html, body {
 
   /* ハイスコア表示 */
   #highscore-display {
-    font-size: 15px;
+    font-size: 13px;
     color: #ffe79b;
     margin-top: 4px;
   }
@@ -217,4 +253,21 @@ html, body {
     }
     .card .name { grid-column: 2; margin: 0; }
     .card .desc { grid-column: 2; margin: 0; }
+  }
+
+  /* モバイル(縦長)用タイトル調整: ロゴ・文字を小さくして塊を縮め、顔を見せる */
+  @media (max-width: 600px) {
+    #title { background-position: center 32%; }
+    #title-logo {
+      max-height: 26vh;
+      max-width: 95%;
+      margin: 0 0 -12px 0;
+    }
+    #title p { font-size: 10px; }
+    #highscore-display { font-size: 10px; }
+    .mode-btn { width: min(66%, 240px); }
+    /* モバイルは仮想スティック操作なので WASD 説明を隠す */
+    #move-hint { display: none; }
+    /* 撃破数の後で改行 */
+    .hs-mobile-break { display: inline; }
   }

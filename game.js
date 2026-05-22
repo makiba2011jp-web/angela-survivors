@@ -4011,7 +4011,8 @@ function updateHighscoreDisplay() {
   const el = document.getElementById("highscore-display");
   if (!el) return;
   if (hs.kills) {
-    el.textContent = `🏆 最高記録 — 撃破: ${hs.kills}  最高レベル: ${hs.level}  最長生存: ${formatTime(hs.survived || 0)}`;
+    // モバイルでは撃破数の後で改行(.hs-mobile-break をCSSで切替)
+    el.innerHTML = `🏆 最高記録 — 撃破: ${hs.kills} <br class="hs-mobile-break">最高レベル: ${hs.level}  最長生存: ${formatTime(hs.survived || 0)}`;
   } else {
     el.textContent = "";
   }

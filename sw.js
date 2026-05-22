@@ -17,7 +17,7 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
-  const isAsset = /\.(png|mp3|json)$/i.test(url.pathname);
+  const isAsset = /\.(png|jpe?g|mp3|json)$/i.test(url.pathname);
 
   if (isAsset) {
     // 画像・音声・manifest: キャッシュ優先(重く変化が少ない)

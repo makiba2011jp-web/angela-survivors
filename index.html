@@ -28,13 +28,13 @@
 
 <!-- タイトル画面 -->
 <div id="title" class="overlay active">
-  <h1>エンジェラサバイバーズ</h1>
+  <img id="title-logo" src="title_logo.png" alt="エンジェラサバイバーズ">
   <p>魔女エンジェラの生存サバイバル</p>
-  <p>WASD / 矢印キー で移動 ・ 攻撃は自動</p>
+  <p id="move-hint">WASD / 矢印キー で移動 ・ 攻撃は自動</p>
   <div id="highscore-display"></div>
   <div id="mode-select">
-    <button id="startBtnEasy" class="mode-btn mode-easy">イージー (10分)</button>
-    <button id="startBtn" class="mode-btn mode-normal">ノーマル (30分)</button>
+    <button id="startBtnEasy" class="mode-btn mode-easy" aria-label="イージー (10分)"></button>
+    <button id="startBtn" class="mode-btn mode-normal" aria-label="ノーマル (30分)"></button>
   </div>
 </div>
 
