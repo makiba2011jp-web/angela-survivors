@@ -162,7 +162,7 @@ const EASY_MODS = {
   enemyCap:        0.7,  // 同時存在数上限
   specialHp:       0.7,  // 特殊敵(デイジー・ポリネム・ヨンヨン・コンブ・ポッティ)のHP
   specialInterval: 1.5,  // 特殊敵の出現間隔
-  bossHp:          0.7,  // ボス(まきば)HP
+  bossHp:          0.35, // ボス(まきば)HP
 };
 function easyMul(key) {
   return gameMode === "easy" ? EASY_MODS[key] : 1;
@@ -1560,8 +1560,8 @@ function daisySpawnLoop(dt) {
 function spawnKonbu() {
   const angle = Math.random() * Math.PI * 2;
   const dist  = 480 + Math.random() * 80;
-  // イージーモードでは特にコンブが固すぎるためHPをさらに半分に
-  const hp    = Math.floor(3000 * easyMul("specialHp") * (isEasyMode() ? 0.5 : 1));
+  // イージーモードでは特にコンブが固すぎるためHPをさらに ×0.25 に
+  const hp    = Math.floor(3000 * easyMul("specialHp") * (isEasyMode() ? 0.25 : 1));
   konbuElites.push({
     x: player.x + Math.cos(angle) * dist,
     y: player.y + Math.sin(angle) * dist,
