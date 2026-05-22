@@ -257,7 +257,11 @@ html, body {
 
   /* モバイル(縦長)用タイトル調整: ロゴ・文字を小さくして塊を縮め、顔を見せる */
   @media (max-width: 600px) {
-    #title { background-position: center 32%; padding-bottom: 7vh; }
+    #title {
+      background-position: center top;
+      background-size: auto 64vh;
+      padding-bottom: 7vh;
+    }
     #title-logo {
       max-height: 26vh;
       max-width: 95%;
