@@ -1773,7 +1773,7 @@ function drawKonbuElites() {
     const frameImg = sheet.loaded ? sheet.frames[fi] : null;
     const drawSize = sheet.drawSize;
     const dxOff = -drawSize / 2;
-    const dyOff = 28 - drawSize + 35;
+    const dyOff = 28 - drawSize + 8;
 
     if (frameImg) {
       ctx.save();
@@ -2032,7 +2032,7 @@ function drawPorinemuEnemies() {
     const frameImg = sheet.loaded ? sheet.frames[fi] : null;
     const drawSize = sheet.drawSize;
     const dxOff = -drawSize / 2;
-    const dyOff = 28 - drawSize + 35;
+    const dyOff = 28 - drawSize;
 
     if (frameImg) {
       ctx.save();
@@ -2281,7 +2281,7 @@ function drawDaisyEnemies() {
     const frameImg = sheet.loaded ? sheet.frames[fi] : null;
     const drawSize = sheet.drawSize;
     const dxOff = -drawSize / 2;
-    const dyOff = 28 - drawSize + 35;
+    const dyOff = 28 - drawSize;
 
     if (frameImg) {
       ctx.save();
@@ -2800,7 +2800,7 @@ function drawPottyElites() {
     const frameImg = sheet.loaded ? sheet.frames[fi] : null;
     const drawSize = sheet.drawSize;
     const dxOff = -drawSize / 2;
-    const dyOff = 28 - drawSize + 35;
+    const dyOff = 28 - drawSize + 8;
 
     if (frameImg) {
       // idle / attack / effect: multiply合成で本体描画 + ヒットフラッシュ(lighter)
@@ -3619,7 +3619,7 @@ function drawBoss() {
     // 画像下部に余白を考慮して足元を影の中心に揃える
     const SHADOW_OFFSET_Y = 50;
     const dx = -drawSize / 2;
-    const dy = SHADOW_OFFSET_Y - drawSize + 50;
+    const dy = SHADOW_OFFSET_Y - drawSize + 35;
     ctx.save();
     ctx.translate(boss.x, boss.y);
     if (player.x > boss.x) ctx.scale(-1, 1);
