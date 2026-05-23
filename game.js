@@ -3856,6 +3856,17 @@ function restart() {
   initGame();
 }
 
+// ゲームオーバー等からタイトル画面に戻る(モード選択からやり直せる)
+function backToTitle() {
+  gameState = STATE_TITLE;
+  hideOverlay("gameover");
+  hideOverlay("clear");
+  hideOverlay("stage-clear");
+  hideOverlay("levelup");
+  showOverlay("title");
+  updateHighscoreDisplay();
+}
+
 // ---------- ミニマップ ----------
 const minimapCanvas = document.getElementById("minimap");
 const mmCtx = minimapCanvas.getContext("2d");
