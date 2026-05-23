@@ -57,6 +57,25 @@ html, body {
     transform: translateY(-2px);
   }
 
+  /* ゲームオーバー画面: 下に gameover.jpg、上側に文字とボタン */
+  #gameover {
+    background:
+      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
+      url("gameover.jpg") center bottom / auto 55vh no-repeat,
+      #0b1410;
+    justify-content: flex-start;
+    padding-top: 5vh;
+  }
+  #gameover p, #gameover h2 { text-shadow: 0 0 6px #000, 0 1px 2px #000; }
+  #gameover h2 { font-size: 26px; margin: 0 0 6px 0; }
+  #gameover p { font-size: 13px; margin: 1px 0; }
+  #go-highscore { font-size: 13px !important; margin-top: 4px !important; }
+  #gameover button {
+    font-size: 16px;
+    padding: 8px 28px;
+    margin-top: 14px;
+  }
+
   /* タイトル画面: 背景アート + 下方を暗くして文字を読みやすく */
   #title {
     background:
