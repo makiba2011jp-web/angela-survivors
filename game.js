@@ -3109,6 +3109,12 @@ function update(dt) {
         `ステージ${currentStage} クリア！`;
       document.getElementById("stage-clear-sub").textContent =
         currentStage === 2 ? "最終ステージへ進みます！" : "次のステージへ進みます";
+      // ステージ別の背景画像クラスを切替
+      const stageEl = document.getElementById("stage-clear");
+      if (stageEl) {
+        stageEl.classList.toggle("stage1", currentStage === 1);
+        stageEl.classList.toggle("stage2", currentStage === 2);
+      }
       showOverlay("stage-clear");
     } else {
       gameState = STATE_CLEAR;
@@ -3842,6 +3848,11 @@ function showClear() {
     hsEl.textContent = updated
       ? `🏆 新記録！ 最高撃破: ${hs.kills}  最高レベル: ${hs.level}`
       : `🏆 ベスト 撃破: ${hs.kills}  レベル: ${hs.level}`;
+  }
+  // モードに応じてクリア画面の背景画像を切り替え
+  const clearEl = document.getElementById("clear");
+  if (clearEl) {
+    clearEl.classList.toggle("clear-normal", gameMode === "normal");
   }
   showOverlay("clear");
 }
