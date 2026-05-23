@@ -96,7 +96,7 @@ html, body {
   /* ステージクリア画面: ステージごとに別画像 */
   #stage-clear {
     justify-content: flex-start;
-    padding-top: 5vh;
+    padding-top: 2vh;
   }
   #stage-clear h2, #stage-clear p { text-shadow: 0 0 6px #000, 0 1px 2px #000; }
   #stage-clear.stage1 {
