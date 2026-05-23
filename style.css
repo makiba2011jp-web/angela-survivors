@@ -61,7 +61,7 @@ html, body {
   #gameover {
     background:
       linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
-      url("gameover.jpg") center bottom / auto 55vh no-repeat,
+      url("gameover.jpg") center 90% / auto 55vh no-repeat,
       #0b1410;
     justify-content: flex-start;
     padding-top: 5vh;
