@@ -293,4 +293,6 @@ html, body {
     #move-hint { display: none; }
     /* 撃破数の後で改行 */
     .hs-mobile-break { display: inline; }
+    /* ゲームオーバー画像をモバイルでは小さく */
+    #gameover { background-size: auto 40vh; }
   }
