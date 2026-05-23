@@ -60,7 +60,7 @@ html, body {
   /* ゲームオーバー画面: 下に gameover.jpg、上側に文字とボタン */
   #gameover {
     background:
-      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%),
       url("gameover.jpg") center 85% / auto 55vh no-repeat,
       #0b1410;
     justify-content: flex-start;
@@ -79,7 +79,7 @@ html, body {
   /* クリア画面: 下に clear.jpg(イージー)を背景的に配置 */
   #clear {
     background:
-      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%),
       url("clear.jpg") center 85% / auto 55vh no-repeat,
       #0b1410;
     justify-content: flex-start;
@@ -88,7 +88,7 @@ html, body {
   /* ノーマルモードのクリアは別画像(草原・晴天) */
   #clear.clear-normal {
     background:
-      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%),
       url("clear_normal.jpg") center 85% / auto 55vh no-repeat,
       #0b1410;
   }
@@ -101,13 +101,13 @@ html, body {
   #stage-clear h2, #stage-clear p { text-shadow: 0 0 6px #000, 0 1px 2px #000; }
   #stage-clear.stage1 {
     background:
-      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%),
       url("stage1_clear.jpg") center 85% / auto 55vh no-repeat,
       #0b1410;
   }
   #stage-clear.stage2 {
     background:
-      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.5) 100%),
+      linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%),
       url("stage2_clear.jpg") center 85% / auto 55vh no-repeat,
       #0b1410;
   }
@@ -338,8 +338,8 @@ html, body {
     #move-hint { display: none; }
     /* 撃破数の後で改行 */
     .hs-mobile-break { display: inline; }
-    /* ゲームオーバー・クリア画像をモバイルでは小さく */
-    #gameover { background-size: auto 40vh; }
-    #clear { background-size: auto 40vh; }
-    #stage-clear.stage1, #stage-clear.stage2 { background-size: auto 40vh; }
+    /* モバイル: 画像を画面幅に合わせる(横がきれないように) */
+    #gameover { background-size: 100% auto; }
+    #clear, #clear.clear-normal { background-size: 100% auto; }
+    #stage-clear.stage1, #stage-clear.stage2 { background-size: 100% auto; }
   }
