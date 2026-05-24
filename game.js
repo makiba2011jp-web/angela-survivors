@@ -3619,7 +3619,7 @@ function drawBoss() {
     // 画像下部に余白を考慮して足元を影の中心に揃える
     const SHADOW_OFFSET_Y = 50;
     const dx = -drawSize / 2;
-    const dy = SHADOW_OFFSET_Y - drawSize + 35;
+    const dy = SHADOW_OFFSET_Y - drawSize + 25;
     ctx.save();
     ctx.translate(boss.x, boss.y);
     if (player.x > boss.x) ctx.scale(-1, 1);
